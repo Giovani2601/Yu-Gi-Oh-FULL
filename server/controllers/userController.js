@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const logActivity = require('../middlewares/logger');
 
 // Cadastro
 exports.cadastrarUsuario = async (req, res) => {
@@ -34,10 +35,18 @@ exports.loginUsuario = async (req, res) => {
     const { email, senha } = req.body;
 
     const usuario = await User.findOne({ email });
-    if (!usuario) return res.status(401).json({ erro: 'Email não encontrado' });
+    if (!usuario) {
+      logActivity('LOGIN-ERROR', `Email inexistente: ${email}`, req);
+      return res.status(401).json({ erro: 'Email não encontrado' });
+    } 
 
     const senhaValida = await usuario.compararSenha(senha);
-    if (!senhaValida) return res.status(401).json({ erro: 'Senha incorreta' });
+    if (!senhaValida) { 
+      logActivity('LOGIN-ERROR', `Senha incorreta para: ${email}`, req);
+      return res.status(401).json({ erro: 'Senha incorreta' });
+    }
+
+    logActivity('LOGIN-SUCESS', `Login de: ${email}`, req);
 
     // Geração do token JWT
     const token = jwt.sign(
@@ -56,6 +65,7 @@ exports.loginUsuario = async (req, res) => {
       }
     });
   } catch (err) {
+    logActivity('ERROR', `Erro no login: ${err.message}`, req);
     res.status(500).json({ erro: 'Erro ao fazer login', detalhes: err.message });
   }
 };

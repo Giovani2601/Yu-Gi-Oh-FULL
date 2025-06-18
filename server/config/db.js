@@ -5,6 +5,7 @@ const connectDB = async () => {
     await mongoose.connect('mongodb://localhost:27017/yugioh', {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      maxPoolSize: 10,
     });
     console.log('✅ MongoDB conectado');
   } catch (error) {
