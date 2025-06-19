@@ -7,25 +7,40 @@ exports.cadastrarUsuario = async (req, res) => {
   try {
     const { nome, email, senha } = req.body;
 
+    // Validação de campos obrigatórios
+    if (!nome) {
+      return res.status(400).json({ erro: 'O campo nome é obrigatório.' });
+    }
+    if (!email) {
+      return res.status(400).json({ erro: 'O campo email é obrigatório.' });
+    }
+    if (!senha) {
+      return res.status(400).json({ erro: 'O campo senha é obrigatório.' });
+    }
+
     // Validação de unicidade do email
     const jaExiste = await User.findOne({ email });
     if (jaExiste) {
-      return res.status(400).json({ erro: 'Email já cadastrado' });
+      logActivity('REGISTER-ERROR', `Erro ao tentar registrar email em utilização: ${email}`, req);
+      return res.status(400).json({ erro: 'Email já cadastrado.' });
     }
 
     const novoUsuario = new User({ nome, email, senha });
     await novoUsuario.save();
 
     res.status(201).json({
-      mensagem: 'Usuário cadastrado com sucesso',
+      mensagem: 'Usuário cadastrado com sucesso!',
       usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
         email: novoUsuario.email
       }
     });
+    logActivity('REGISTER-SUCCESS', `Registro bem-sucedido para o email: ${email}`, req);
   } catch (err) {
-    res.status(500).json({ erro: 'Erro ao cadastrar usuário', detalhes: err.message });
+    console.error('Erro ao cadastrar usuário:', err);
+    logActivity('REGISTER-ERROR', `Erro interno no registro para ${req.body.email || 'email não fornecido'}: ${err.message}`, req);
+    res.status(500).json({ erro: 'Erro ao cadastrar usuário.', detalhes: err.message });
   }
 };
 
@@ -34,19 +49,27 @@ exports.loginUsuario = async (req, res) => {
   try {
     const { email, senha } = req.body;
 
-    const usuario = await User.findOne({ email });
-    if (!usuario) {
-      logActivity('LOGIN-ERROR', `Email inexistente: ${email}`, req);
-      return res.status(401).json({ erro: 'Email não encontrado' });
-    } 
-
-    const senhaValida = await usuario.compararSenha(senha);
-    if (!senhaValida) { 
-      logActivity('LOGIN-ERROR', `Senha incorreta para: ${email}`, req);
-      return res.status(401).json({ erro: 'Senha incorreta' });
+    // Validação de campos obrigatórios
+    if (!email) {
+      return res.status(400).json({ erro: 'O campo email é obrigatório.' });
+    }
+    if (!senha) {
+      return res.status(400).json({ erro: 'O campo senha é obrigatório.' });
     }
 
-    logActivity('LOGIN-SUCESS', `Login de: ${email}`, req);
+    const usuario = await User.findOne({ email });
+    if (!usuario) {
+      logActivity('LOGIN-ERROR', `Tentativa de login com email inexistente: ${email}`, req);
+      return res.status(401).json({ erro: 'Email não encontrado.' });
+    }
+
+    const senhaValida = await usuario.compararSenha(senha);
+    if (!senhaValida) {
+      logActivity('LOGIN-ERROR', `Tentativa de login com senha incorreta para o email: ${email}`, req);
+      return res.status(401).json({ erro: 'Senha incorreta.' });
+    }
+
+    logActivity('LOGIN-SUCCESS', `Login bem-sucedido para o email: ${email}`, req);
 
     // Geração do token JWT
     const token = jwt.sign(
@@ -56,7 +79,7 @@ exports.loginUsuario = async (req, res) => {
     );
 
     res.json({
-      mensagem: 'Login bem-sucedido',
+      mensagem: 'Login bem-sucedido!',
       token,
       usuario: {
         id: usuario._id,
@@ -65,7 +88,8 @@ exports.loginUsuario = async (req, res) => {
       }
     });
   } catch (err) {
-    logActivity('ERROR', `Erro no login: ${err.message}`, req);
-    res.status(500).json({ erro: 'Erro ao fazer login', detalhes: err.message });
+    console.error('Erro no login:', err);
+    logActivity('LOGIN-ERROR', `Erro interno no login para ${req.body.email || 'email não fornecido'}: ${err.message}`, req);
+    res.status(500).json({ erro: 'Erro ao fazer login.', detalhes: err.message });
   }
 };
