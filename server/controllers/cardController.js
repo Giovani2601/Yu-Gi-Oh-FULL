@@ -1,9 +1,29 @@
 const Card = require('../models/Card');
 const logActivity = require('../middlewares/logger');
+const cache = require('../utils/cache');
+
+// Cria array de pares [chave, valor], ordenado alfabeticamente por chave
+function getCacheKeyForGetCards(query) {
+  const keys = Object.keys(query).sort();
+  const parts = keys.map(k => `${k}:${query[k]}`);
+  const key = 'cards' + parts.join('|');
+  return key;
+}
 
 // Lista todos os cards ou filtra por tipo e/ou nome
 exports.getCards = async (req, res) => {
   try {
+    const cacheKey = getCacheKeyForGetCards(req.query);
+
+    // Verifica se existe no cache
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      // Cache HIT
+      logActivity('CACHE-HIT', `Retornando cards do cache para chave '${cacheKey}'`, req);
+      return res.json(cachedData);
+    }
+
+    // Cache MISS, busca no banco de dados
     const { tipo, nome } = req.query;
     let filtro = {};
 
@@ -11,6 +31,10 @@ exports.getCards = async (req, res) => {
     if (nome) filtro.nome = new RegExp(nome, 'i');
 
     const cards = await Card.find(filtro);
+
+    // Armazena no cache
+    cache.set(cacheKey, cards);
+    logActivity('CACHE-SET', `Salvando cards no cache para chave '${cacheKey}', total ${cards.length}`, req);
 
     res.json(cards);
   } catch (err) {
@@ -36,10 +60,18 @@ exports.createCard = async (req, res) => {
     }
 
     const novoCard = new Card(dadosCard);
-
     await novoCard.save(); 
 
     logActivity('CARD-CREATED', `Card '${novoCard.nome}' (ID: ${novoCard._id}) criado com sucesso.`, req);
+
+    // Invalida caches relacionados a GET /cards:
+    const keys = cache.keys();
+    const keysToDelete = keys.filter(key => key.startsWith('cards'));
+    if (keysToDelete.length > 0) {
+      cache.del(keysToDelete);
+      logActivity('CACHE-INVALIDATE', `Invalidando cache de cards após criação: chaves removidas ${keysToDelete.join(',')}`, req);
+    }
+
     res.status(201).json(novoCard);
   } catch (err) {
     if (err.name === 'ValidationError') {
