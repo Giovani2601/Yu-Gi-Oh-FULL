@@ -19,6 +19,12 @@ const cardSchema = new mongoose.Schema({
     trim: true,
     maxlength: 1000
   },
+  imagem: {
+    type: String,
+    required: false,
+    trim: true,
+    match: [/^(ftp|http|https):\/\/[^ "]+$/, 'Por favor, insira uma URL de imagem válida.']
+  },
   nivel: {
     type: Number,
     min: 1,
