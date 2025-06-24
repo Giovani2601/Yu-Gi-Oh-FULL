@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const expressMongoSanitize = require('express-mongo-sanitize');
 const fs = require('fs');
 const https = require('https');
@@ -9,7 +10,11 @@ const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const cardRoutes = require('./routes/cardRoutes');
 const sanitizeBody = require('./middlewares/sanitizer');
+const path = require('path');
 require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 4000;
 
 // Middleware para sanitizar corpo e parâmetros da requisição, pois a query estava dando erro
 function sanitizeBodyAndParams(req, res, next) {
@@ -23,10 +28,9 @@ function sanitizeBodyAndParams(req, res, next) {
   next();
 }
 
-const app = express();
-const PORT = 4000;
-
 connectDB();
+
+app.use(compression());
 
 // Define um máximo de requisições por IP para evitar abusos
 const limiter = rateLimit({
@@ -35,24 +39,32 @@ const limiter = rateLimit({
   message: 'Muitas requisições, tente novamente mais tarde.'
 });
 
+app.use(limiter);
 app.use(express.json({ limit: '10kb' })); // Evita ataques DoS (sobrecarga) limitando a requisição
 app.use(express.urlencoded({ extended: true }));
-app.use(sanitizeBodyAndParams);
 
 app.use(helmet()); // Adiciona cabeçalhos de segurança HTTP
 app.use(cors());
-app.use(sanitizeBody); // Aplica sanitização de corpo de requisição para evitar XSS em requisições JSON
+app.use(sanitizeBodyAndParams); // Aplica sanitização para evitar NoSQL injection
 
 app.use('/api/usuario', userRoutes);
 app.use('/api/card', cardRoutes);
 
+// Serve arquivos estáticos da pasta build do React
+app.use(express.static(path.join(__dirname, '../web/build')));
+
+// Rota para servir o arquivo index.html do React
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '../web/build', 'index.html'));
+});
+
 // Utiliza os certificados autoassinados SSL para HTTPS
 const httpsOptions = {
-  key: fs.readFileSync('./certificates/server.key'),
-  cert: fs.readFileSync('./certificates/server.cert')
+  key: fs.readFileSync(path.join(__dirname, 'certificates/server.key')),
+  cert: fs.readFileSync(path.join(__dirname, 'certificates/server.cert'))
 };
 
 // Inicia o servidor HTTPS
-https.createServer(httpsOptions, app).listen(4000, () => {
+https.createServer(httpsOptions, app).listen(PORT, () => {
   console.log(`🔐 Servidor HTTPS rodando em https://localhost:${PORT}`);
 });
