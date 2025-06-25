@@ -32,7 +32,7 @@ connectDB();
 
 app.use(compression());
 
-// Define um máximo de requisições por IP para evitar abusos
+// Máximo de requisições por IP para evitar abusos
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,

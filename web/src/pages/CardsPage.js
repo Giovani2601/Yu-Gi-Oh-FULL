@@ -29,11 +29,8 @@ export default function CardsPage() {
     const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
     const [selectedCard, setSelectedCard] = useState(null); 
 
-    // Estados para os filtros e busca
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('');
-
-    // Estado para paginação
     const [currentPage, setCurrentPage] = useState(1);
     const [cardsPerPage] = useState(18); 
 
@@ -70,7 +67,6 @@ export default function CardsPage() {
         fetchCards();
     }, [fetchCards]);
 
-    // Paginação
     const indexOfLastCard = currentPage * cardsPerPage;
     const indexOfFirstCard = indexOfLastCard - cardsPerPage;
     const currentCards = cards.slice(indexOfFirstCard, indexOfLastCard);

@@ -10,15 +10,12 @@ function getCacheKeyForGetCards(query) {
   return key;
 }
 
-// Lista todos os cards ou filtra por tipo e/ou nome
 exports.getCards = async (req, res) => {
   try {
     const cacheKey = getCacheKeyForGetCards(req.query);
 
-    // Verifica se existe no cache
     const cachedData = cache.get(cacheKey);
     if (cachedData) {
-      // Cache HIT
       logActivity('CACHE-HIT', `Retornando cards do cache para chave '${cacheKey}'`, req);
       return res.json(cachedData);
     }
@@ -32,7 +29,6 @@ exports.getCards = async (req, res) => {
 
     const cards = await Card.find(filtro);
 
-    // Armazena no cache
     cache.set(cacheKey, cards);
     logActivity('CACHE-SET', `Salvando cards no cache para chave '${cacheKey}', total ${cards.length}`, req);
 
@@ -44,12 +40,10 @@ exports.getCards = async (req, res) => {
   }
 };
 
-// Cria um novo card
 exports.createCard = async (req, res) => {
   try {
     const dadosCard = req.body;
 
-    // Validação de campos obrigatórios básicos
     if (!dadosCard.nome) {
       logActivity('CARD-CREATE-VALIDATION-ERROR', 'Tentativa de criar card sem nome.', req);
       return res.status(400).json({ erro: 'O campo nome do card é obrigatório.' });

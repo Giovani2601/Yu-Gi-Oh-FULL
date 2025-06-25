@@ -2,12 +2,10 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const logActivity = require('../middlewares/logger');
 
-// Cadastro
 exports.cadastrarUsuario = async (req, res) => {
   try {
     const { nome, email, senha } = req.body;
 
-    // Validação de campos obrigatórios
     if (!nome) {
       return res.status(400).json({ erro: 'O campo nome é obrigatório.' });
     }
@@ -18,7 +16,6 @@ exports.cadastrarUsuario = async (req, res) => {
       return res.status(400).json({ erro: 'O campo senha é obrigatório.' });
     }
 
-    // Validação de unicidade do email
     const jaExiste = await User.findOne({ email });
     if (jaExiste) {
       logActivity('REGISTER-ERROR', `Erro ao tentar registrar email em utilização: ${email}`, req);
@@ -44,12 +41,10 @@ exports.cadastrarUsuario = async (req, res) => {
   }
 };
 
-// Login
 exports.loginUsuario = async (req, res) => {
   try {
     const { email, senha } = req.body;
 
-    // Validação de campos obrigatórios
     if (!email) {
       return res.status(400).json({ erro: 'O campo email é obrigatório.' });
     }
@@ -71,7 +66,6 @@ exports.loginUsuario = async (req, res) => {
 
     logActivity('LOGIN-SUCCESS', `Login bem-sucedido para o email: ${email}`, req);
 
-    // Geração do token JWT
     const token = jwt.sign(
       { id: usuario._id, nome: usuario.nome },
       process.env.JWT_SECRET,
