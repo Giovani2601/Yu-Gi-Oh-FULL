@@ -1,5 +1,5 @@
 node_modules/
 .env
-server.key
-server.cert
+localhost-key.pem
+localhost.pem
 /logs

@@ -60,8 +60,8 @@ app.get(/.*/, (req, res) => {
 
 // Utiliza os certificados autoassinados SSL para HTTPS
 const httpsOptions = {
-  key: fs.readFileSync(path.join(__dirname, 'certificates/server.key')),
-  cert: fs.readFileSync(path.join(__dirname, 'certificates/server.cert'))
+  key: fs.readFileSync(path.join(__dirname, 'certificates/localhost-key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'certificates/localhost.pem'))
 };
 
 // Inicia o servidor HTTPS
