@@ -148,6 +148,8 @@ O **FullStack Yu-Gi-Oh!** é composto por:
 
 ## 🚀 Como Rodar a Aplicação
 
+Observações: Baixar o MongoDB e conectar na conexão padrão 'mongodb://localhost:27017' antes de rodar a aplicação, para conectar-se ao banco
+
 1. **Clone o repositório**  
     - git clone https://github.com/Giovani2601/Yu-Gi-Oh-FULL.git
 
@@ -166,6 +168,8 @@ O **FullStack Yu-Gi-Oh!** é composto por:
 
 6. **Inicie o servidor**
     - node index.js
+  
+    - Observação: se desejar subir alguns dados para testar melhor a aplicação, usar o comando 'node seed.js' para inserir alguns dados pré-definidos 
 
 7. **Navegue de volta até a pasta raiz do projeto**
     - cd ..
